@@ -17,6 +17,8 @@ simpleKmeans = require('simple-kmeans');
 grayscaleLib = require('./grayscale');
 grayscaleMethods = process.argv[4];
 grayscale = null;
+
+// Select the algorithm of grayscale
 switch (parseInt(grayscaleMethods)) {
 case 0:
   grayscale = grayscaleLib.linearLuminance;
@@ -60,6 +62,8 @@ app = {
   filenames: {}
 };
 mov = process.argv[2];
+
+// Output directory
 dir = mov.replace(/^[^\/]+\//, 'output/experiment/').replace(/\.(mov|MOV)$/i, "-" + grayscaleMethods + "/");
 sh("avconv -i " + mov).err.result(function(it){
   var opt, that, pbOpt, cache, act, flow, i$, len$, step, lastPost;
@@ -149,7 +153,11 @@ sh("avconv -i " + mov).err.result(function(it){
     total: 0
   };
   cache = {};
+
+/***** act *****/
   act = {};
+
+  // convert .mov to .mp4
   act.mov2mp4 = function(step){
     var opt_;
     opt_ = opt.quiet ? '-v quiet' : '';
@@ -157,14 +165,20 @@ sh("avconv -i " + mov).err.result(function(it){
       return step.cb();
     });
   };
+
+  // slice video to frame by frame
   act.frame = function(step){
     var _;
     mkdir(framePath('raw'));
     _ = opt.quiet ? '-v quiet' : '';
+
+    // %05d up to ~30m
     return sh("avconv -i " + step.pre + " -f image2 " + _ + " -y " + framePath('raw') + opt.frameNameFormat + ".png").result(function(){
       return step.cb();
     });
   };
+
+  // statistics
   act.stat = function(step){
     return loadFrame(framePath('raw'), opt.size, function(frames){
       var stat, i$, ref$, len$, i, j$, to$, j, ref1$, height, width, diff, k, frame, data, brightness, v;
@@ -210,6 +224,8 @@ sh("avconv -i " + mov).err.result(function(it){
       step.cb();
     });
   };
+
+  // statistics image
   act.statImage = function(step){
     var ctx, data, i$, ref$, len$, i, stat, ref1$, m, M, d, j$, to$, j;
     ctx = new canvas(opt.size.width, opt.size.height).getContext('2d');
@@ -267,7 +283,7 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     console.log('threshold:', threshold);
     points = data2xy(inputData, [width, height], threshold);
-    clusters = dbscan.run(points, opt.dbscan.eps, opt.dbscan.minPoints);
+    clusters = dbscan.run(points, opt.dbscan.eps, opt.dbscan.minPoints); // eps, min-points test 50, 200 good 150, 300
     if (!clusters.length) {
       saveImage(dir + app.filenames.fullHeart, outputData, opt.resize);
       saveImage(dir + app.filenames.diffMean, diffMean, opt.resize);
@@ -324,6 +340,8 @@ sh("avconv -i " + mov).err.result(function(it){
       pbOpt.total = it.length;
       log('masking...');
       progress('start');
+
+      // if i is 20 then break
       for (i$ = 0, to$ = it.length; i$ < to$; ++i$) {
         i = i$;
         progress('tick');
@@ -364,7 +382,7 @@ sh("avconv -i " + mov).err.result(function(it){
     var ref$, width, height, center, limit;
     ref$ = [opt.size.width, opt.size.height], width = ref$[0], height = ref$[1];
     center = [];
-    limit = 60;
+    limit = 60; // maximum frame
     return loadFrame(framePath("heart_" + opt.resizeRatio), opt.size, function(it){
       var i$, to$, i, data, xIndex, yIndex, total, j$, to1$, j;
       pbOpt.total = it.length - 1;
@@ -415,6 +433,8 @@ sh("avconv -i " + mov).err.result(function(it){
       }, function(err, res){
         var i$, ref$, len$, c, centroid, res$;
         console.log(res[0].centroid, res[1].centroid);
+
+        // visualization
         for (i$ = 0, len$ = (ref$ = res[0].cluster).length; i$ < len$; ++i$) {
           c = ref$[i$];
           ctx.beginPath();
@@ -477,6 +497,8 @@ sh("avconv -i " + mov).err.result(function(it){
       return step.cb();
     }
   };
+
+  // calculate brightness frame by frame
   act.profile = function(step){
     var ref$, width, height, profile, diffMeanPosition, fullHeartPosition, halfHeartPosition;
     ref$ = [opt.resize.width, opt.resize.height], width = ref$[0], height = ref$[1];
@@ -541,6 +563,8 @@ sh("avconv -i " + mov).err.result(function(it){
       step.cb();
     });
   };
+
+  // calculate envelope curve
   act.envelope = function(step){
     var o, i$, ref$, len$, l;
     o = {};
@@ -550,6 +574,9 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return step.cb();
   };
+
+/***** labs *****/
+
   act.lab = function(step){
     app.lab = app.lab();
     frequencyCalculation();
@@ -557,12 +584,18 @@ sh("avconv -i " + mov).err.result(function(it){
     saveJson(dir + opt.labName + 'result.json', app.lab);
     return step.cb();
   };
+
+/***** for demo only *****/
+
+  // combine marked images to mp4 file
   act.combine = function(step){
     if (!fs.existsSync(dir + opt.labName + 'center')) {
       step.cb();
     }
     return saveVideo('marked', step.post, step.cb);
   };
+
+  // mark images
   act.mark = function(step){
     var center;
     if (!fs.existsSync(dir + opt.labName + 'center')) {
@@ -598,7 +631,12 @@ sh("avconv -i " + mov).err.result(function(it){
       });
     });
   };
+
+
+/***** flows *****/
   flow = [
+
+    // preparing
     {
       act: 'mov2mp4',
       pre: mov,
@@ -614,7 +652,10 @@ sh("avconv -i " + mov).err.result(function(it){
     }, {
       act: 'statImage',
       post: dir + 'diff-mean.png'
-    }, {
+      },
+
+      // get mask
+      {
       act: 'cluster',
       pre: dir + 'diff-mean.png',
       post: dir + app.filenames.fullHeart
@@ -641,16 +682,25 @@ sh("avconv -i " + mov).err.result(function(it){
       act: 'mask',
       pre: dir + opt.labName + app.filenames.halfHeartPosition,
       post: framePath("heart_" + opt.resizeRatio, 1)
-    }, {
+    },
+
+      // get peak
+    {
       act: 'profile',
       post: dir + opt.labName + 'halfHeartProfile'
     }, {
       act: 'envelope',
       pre: dir + 'profile',
       post: dir + 'envelope'
-    }, {
+    },
+
+      // lab
+    {
       act: 'lab'
-    }, {
+    },
+
+    // optional steps
+    {
       act: 'mark',
       post: framePath('marked', 1)
     }, {
@@ -693,6 +743,9 @@ sh("avconv -i " + mov).err.result(function(it){
     log('Finished'.bgMagenta + ' ' + dir.underline.yellow);
     return process.exit(0);
   });
+
+/***** utility *****/
+
   function envelope(it){
     var dist, c, e, i$, to$, i, ref$, ref1$, iB, iT, b, t;
     dist = [1, 2, 3, 4, 5, 6];
@@ -730,6 +783,8 @@ sh("avconv -i " + mov).err.result(function(it){
       e.t.push([c.length - 1, c[c.length - 1]]);
     }
     ref1$ = [0, 0], iB = ref1$[0], iT = ref1$[1];
+
+    // calculate the value of y of each e.t and e.b linearly
     for (i$ = 0, to$ = c.length; i$ < to$; ++i$) {
       i = i$;
       b = (fn$());
@@ -772,6 +827,9 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return _dir + "/" + name + "-frame/";
   }
+
+/***** lab *****/
+
   function heartRegionTest(){
     var name, ref$, heart, total, avg, tmp, met, halfRatio, manualRatio, i$, len$, t, img, ctx, data, j$, to$, i, newManual, newHalf, heartIndexInManual, halfIndexInManual, hit;
     name = app.lab.name;
@@ -814,6 +872,9 @@ sh("avconv -i " + mov).err.result(function(it){
       }
       app.lab.result.regionTest.heartRegionRatio[t] = round(heart / (data.length / 4), 3);
     }
+
+    // convert test
+    // resize manual size to full size
     newManual = new canvas(tmp.full.width, tmp.full.height).getContext('2d');
     newManual.drawImage(tmp.manual, 0, 0, tmp.manual.width, tmp.manual.height, 0, 0, tmp.full.width, tmp.full.height);
     tmp['manual-data'] = newManual.getImageData(0, 0, tmp.full.width, tmp.full.height).data;
@@ -854,6 +915,8 @@ sh("avconv -i " + mov).err.result(function(it){
     return app.lab.result.regionTest.diffMeanSize = tmp['diffMean-heart-size'];
   }
   function frequencyCalculation(){
+
+    // state
     var shortVideo, halfFrames, range, res$, i$, to$, ridx$, ref$, start, end, ref1$, len$, s, j$, len1$, l, fn, data, peak, trough, middlePeak, k$, len2$, peakIndex;
     shortVideo = app.lab.state.frames / app.lab.state.fps < 15;
     halfFrames = app.lab.state.frames / 2;
@@ -870,6 +933,8 @@ sh("avconv -i " + mov).err.result(function(it){
       start: start,
       end: end
     }, (ref$ = app.lab.state.interval).start = ref1$.start, ref$.end = ref1$.end;
+
+    // result
     for (i$ = 0, len$ = (ref$ = opt.filterStage).length; i$ < len$; ++i$) {
       s = ref$[i$];
       app.lab.result.frequency.meanOfFrequency[s] = {};
@@ -971,10 +1036,16 @@ sh("avconv -i " + mov).err.result(function(it){
     offset = -1;
     avg = [];
     for (i$ = 1, to$ = trough.length; i$ < to$; ++i$) {
+
+      // if wrong sequence
       i = i$;
       if (!(trough[i - 1] < (ref$ = peak[i + offset]) && ref$ < trough[i])) {
+
+        // if peak appear first
         if (peak[i + offset] < trough[i - 1]) {
           offset++;
+
+          // if trough appear first
         } else if (peak[i + offset] > trough[i]) {
           offset--;
           continue;
@@ -1025,6 +1096,8 @@ sh("avconv -i " + mov).err.result(function(it){
       cb(cache[name + ""]);
     });
   }
+
+/***** process bar (pb) *****/
   function log(text, mode, progress){
     var time, timeInterval;
     time = new Date().toString().split(' ')[4];
@@ -1072,6 +1145,8 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return _.join('');
   }
+  // pd end
+
   function minmax(it){
     var m, M, i$, len$, v;
     m = M = it[0];
@@ -1091,7 +1166,7 @@ sh("avconv -i " + mov).err.result(function(it){
       fs.mkdirSync(it);
     } else if (!fs.statSync(it).isDirectory) {
       console.log(it);
-      rimraf.sync(it);
+      rimraf.sync(it); // maybe no need to use rimraf
       fs.mkdirSync(it);
     }
   }
@@ -1106,6 +1181,8 @@ sh("avconv -i " + mov).err.result(function(it){
     for (i$ = 0, to$ = data.data.length; i$ < to$; i$ += 4) {
       i = i$;
       if (data.data[i] && data.data[i] > threshold) {
+
+        // index mapping
         results$.push([(i / 4) % size[0], Math.floor((i / 4) / size[0])]);
       }
     }
