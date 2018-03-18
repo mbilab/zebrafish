@@ -7,11 +7,11 @@
    * sudo apt-get install libcairo2-dev libjpeg8-dev libpango1.0-dev libgif-dev build-essential g++
 
 3. install node js
-  * sudo apt-get update
-  * sudo apt-get install nodejs
+   * sudo apt-get update
+   * sudo apt-get install nodejs
 
 4. install npm package
-  * npm i
+   * npm i
 
 # Set up
 
