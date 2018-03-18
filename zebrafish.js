@@ -1,4 +1,6 @@
 var gauss, async, extend, colors, canvas, fs, mkdirp, path, rimraf, sh, mathjs, movingAverage, densityClustering, nodeKmeans, simpleKmeans, grayscaleLib, grayscaleMethods, grayscale, app, mov, dir, replace$ = ''.replace;
+
+// include packages {{{
 gauss = require('gauss');
 async = require('async');
 extend = require('extend');
@@ -15,10 +17,11 @@ densityClustering = require('density-clustering');
 nodeKmeans = require('node-kmeans');
 simpleKmeans = require('simple-kmeans');
 grayscaleLib = require('./grayscale');
+// }}}
+
+// select a grayscale formula {{{
 grayscaleMethods = process.argv[4];
 grayscale = null;
-
-// Select the algorithm of grayscale
 switch (parseInt(grayscaleMethods)) {
 case 0:
   grayscale = grayscaleLib.linearLuminance;
@@ -56,20 +59,25 @@ case 10:
 case 11:
   grayscale = grayscaleLib.lusterGC;
 }
-app = {
-  timeStamp: 0,
+// }}}
+
+app = { // variables are stored here {{{
   events: [],
-  filenames: {}
-};
+  filenames: {},
+  timeStamp: 0,
+}; // }}}
+
 mov = process.argv[2];
 
 // output directory
 dir = mov.replace(/^[^\/]+\//, 'output/').replace(/\.(mov|MOV)$/i, "-" + grayscaleMethods + "/");
+
 sh("avconv -i " + mov).err.result(function(it){
   var opt, that, pbOpt, cache, act, flow, i$, len$, step, lastPost;
   log('---------------New Video---------------');
   log("'" + 'Video name'.cyan + "': " + mov.replace(/^input\//, ''));
-  app.lab = function(){
+
+  app.lab = function(){ // {{{ get status
     return {
       name: replace$.call(mov, /.mov/, '').replace(/input\//, ''),
       state: {
@@ -100,8 +108,9 @@ sh("avconv -i " + mov).err.result(function(it){
         }
       }
     };
-  };
-  opt = {
+  }; // }}}
+
+  opt = { // constatns are stored here {{{
     labName: 'custom-init-kmeans-centroids/',
     force: {
       mask: true,
@@ -139,6 +148,9 @@ sh("avconv -i " + mov).err.result(function(it){
     width: opt.size.width / opt.resizeRatio,
     height: opt.size.height / opt.resizeRatio
   };
+  // }}}
+
+  // more variables {{{
   app.filenames = {
     diffMean: "_diff-mean_threshold.png",
     fullHeart: "_mask_threshold_" + opt.dbscan.eps + "_" + opt.dbscan.minPoints + ".png",
@@ -153,21 +165,19 @@ sh("avconv -i " + mov).err.result(function(it){
     total: 0
   };
   cache = {};
+  // }}}
 
-/***** act *****/
-  act = {};
+  act = {}; // a member function of `act` indicates a filter in the paper
 
-  // convert .mov to .mp4
-  act.mov2mp4 = function(step){
+  act.mov2mp4 = function(step){ // convert .mov to .mp4 {{{
     var opt_;
     opt_ = opt.quiet ? '-v quiet' : '';
     return sh("avconv -i " + step.pre + " -an -c:v libx264 " + opt_ + " -y " + step.post).result(function(){
       return step.cb();
     });
-  };
+  }; // }}}
 
-  // slice video to frame by frame
-  act.frame = function(step){
+  act.frame = function(step){ // slice video to frame by frame {{{
     var _;
     mkdir(framePath('raw'));
     _ = opt.quiet ? '-v quiet' : '';
@@ -176,10 +186,9 @@ sh("avconv -i " + mov).err.result(function(it){
     return sh("avconv -i " + step.pre + " -f image2 " + _ + " -y " + framePath('raw') + opt.frameNameFormat + ".png").result(function(){
       return step.cb();
     });
-  };
+  }; // }}}
 
-  // statistics
-  act.stat = function(step){
+  act.stat = function(step){ // statistics {{{
     return loadFrame(framePath('raw'), opt.size, function(frames){
       var stat, i$, ref$, len$, i, j$, to$, j, ref1$, height, width, diff, k, frame, data, brightness, v;
       opt.frames = frames.length;
@@ -223,10 +232,9 @@ sh("avconv -i " + mov).err.result(function(it){
       }
       step.cb();
     });
-  };
+  }; // }}}
 
-  // statistics image
-  act.statImage = function(step){
+  act.statImage = function(step){ // {{{ draw statistics image
     var ctx, data, i$, ref$, len$, i, stat, ref1$, m, M, d, j$, to$, j;
     ctx = new canvas(opt.size.width, opt.size.height).getContext('2d');
     data = ctx.createImageData(opt.size.width, opt.size.height);
@@ -243,8 +251,9 @@ sh("avconv -i " + mov).err.result(function(it){
       saveImage(dir + i + '.png', data, opt.size);
     }
     return step.cb();
-  };
-  act.cluster = function(step){
+  }; // }}}
+
+  act.cluster = function(step){ // {{{ dbscan
     var dbscan, ref$, width, height, outputData, diffMean, ctx, inputData, data, cum, res$, i$, i, to$, brightness, e, len$, m, threshold, sum, b, points, clusters, len, x, min, max, maxCluster, index;
     dbscan = new densityClustering.DBSCAN();
     ref$ = [opt.resize.width, opt.resize.height], width = ref$[0], height = ref$[1];
@@ -312,8 +321,9 @@ sh("avconv -i " + mov).err.result(function(it){
     saveImage(dir + app.filenames.fullHeart, outputData, opt.resize);
     saveImage(dir + app.filenames.diffMean, diffMean, opt.resize);
     return step.cb();
-  };
-  act.digitize = function(step){
+  }; // }}}
+
+  act.digitize = function(step){ // digitize {{{
     var ctx, inputData;
     ctx = imageOf(dir + "/" + app.filenames.fullHeart, opt.resize);
     inputData = ctx.getImageData(0, 0, opt.resize.width, opt.resize.height);
@@ -322,8 +332,9 @@ sh("avconv -i " + mov).err.result(function(it){
     inputData = ctx.getImageData(0, 0, opt.resize.width, opt.resize.height);
     saveJson(dir + opt.labName + (app.filenames.diffMeanPosition + ""), data2xy(inputData, [opt.resize.width, opt.resize.height], 0));
     return step.cb();
-  };
-  act.mask = function(step){
+  }; // }}}
+
+  act.mask = function(step){ // apply mask on frames {{{
     var ref$, width, height;
     mkdir(framePath("heart_" + opt.resizeRatio));
     ref$ = [opt.resize.width, opt.resize.height], width = ref$[0], height = ref$[1];
@@ -377,8 +388,9 @@ sh("avconv -i " + mov).err.result(function(it){
         });
       });
     });
-  };
-  act.center = function(step){
+  }; // }}}
+
+  act.center = function(step){ // identify cluster center {{{
     var ref$, width, height, center, limit;
     ref$ = [opt.size.width, opt.size.height], width = ref$[0], height = ref$[1];
     center = [];
@@ -409,8 +421,9 @@ sh("avconv -i " + mov).err.result(function(it){
       }
       step.cb();
     });
-  };
-  act.kmeans = function(step){
+  }; // }}}
+
+  act.kmeans = function(step){ // k-means {{{
     var center, res$, i$, len$, x, ctx, initIndex;
     if (!fs.existsSync(dir + opt.labName + 'center')) {
       return step.cb();
@@ -462,8 +475,9 @@ sh("avconv -i " + mov).err.result(function(it){
         return step.cb();
       });
     }
-  };
-  act.divide = function(step){
+  }; // }}}
+
+  act.divide = function(step){ // heart to half-heart {{{
     var heartPosition, centroid, res$, i$, len$, p, segment, point, ref$, width, height, outputData, heartIndex, index;
     if (!fs.existsSync(dir + opt.labName + 'centroid')) {
       return step.cb();
@@ -496,10 +510,9 @@ sh("avconv -i " + mov).err.result(function(it){
       saveImage(dir + (opt.labName + "" + app.filenames.halfHeart), outputData, opt.size);
       return step.cb();
     }
-  };
+  }; // }}}
 
-  // calculate brightness frame by frame
-  act.profile = function(step){
+  act.profile = function(step){ // calculate brightness frame by frame {{{
     var ref$, width, height, profile, diffMeanPosition, fullHeartPosition, halfHeartPosition;
     ref$ = [opt.resize.width, opt.resize.height], width = ref$[0], height = ref$[1];
     profile = {};
@@ -562,10 +575,9 @@ sh("avconv -i " + mov).err.result(function(it){
       progress('end');
       step.cb();
     });
-  };
+  }; // }}}
 
-  // calculate envelope curve
-  act.envelope = function(step){
+  act.envelope = function(step){ // calculate envelope curve {{{
     var o, i$, ref$, len$, l;
     o = {};
     for (i$ = 0, len$ = (ref$ = opt.list).length; i$ < len$; ++i$) {
@@ -573,30 +585,24 @@ sh("avconv -i " + mov).err.result(function(it){
       hht(JSON.parse(fs.readFileSync(dir + opt.labName + l + 'Average')), l);
     }
     return step.cb();
-  };
+  }; // }}}
 
-/***** labs *****/
-
-  act.lab = function(step){
+  act.lab = function(step){ // calculate heart rate {{{
     app.lab = app.lab();
     frequencyCalculation();
     heartRegionTest();
     saveJson(dir + opt.labName + 'result.json', app.lab);
     return step.cb();
-  };
+  }; // }}}
 
-/***** for demo only *****/
-
-  // combine marked images to mp4 file
-  act.combine = function(step){
+  act.combine = function(step){ // combine marked images to mp4 file {{{
     if (!fs.existsSync(dir + opt.labName + 'center')) {
       step.cb();
     }
     return saveVideo('marked', step.post, step.cb);
-  };
+  }; // }}}
 
-  // mark images
-  act.mark = function(step){
+  act.mark = function(step){ // mark images {{{
     var center;
     if (!fs.existsSync(dir + opt.labName + 'center')) {
       step.cb();
@@ -630,13 +636,11 @@ sh("avconv -i " + mov).err.result(function(it){
         return step.cb();
       });
     });
-  };
+  }; // }}}
 
+  flow = [ // flow of the above filters {{{
 
-/***** flows *****/
-  flow = [
-
-    // preparing
+    // prepare
     {
       act: 'mov2mp4',
       pre: mov,
@@ -652,10 +656,10 @@ sh("avconv -i " + mov).err.result(function(it){
     }, {
       act: 'statImage',
       post: dir + 'diff-mean.png'
-      },
+    },
 
-      // get mask
-      {
+    // mask
+    {
       act: 'cluster',
       pre: dir + 'diff-mean.png',
       post: dir + app.filenames.fullHeart
@@ -684,7 +688,7 @@ sh("avconv -i " + mov).err.result(function(it){
       post: framePath("heart_" + opt.resizeRatio, 1)
     },
 
-      // get peak
+    // heartbeat
     {
       act: 'profile',
       post: dir + opt.labName + 'halfHeartProfile'
@@ -694,7 +698,7 @@ sh("avconv -i " + mov).err.result(function(it){
       post: dir + 'envelope'
     },
 
-      // lab
+    // heart rate
     {
       act: 'lab'
     },
@@ -708,6 +712,7 @@ sh("avconv -i " + mov).err.result(function(it){
       post: dir + 'marked.mp4'
     }
   ];
+
   for (i$ = 0, len$ = flow.length; i$ < len$; ++i$) {
     step = flow[i$];
     app.events.push({
@@ -715,12 +720,16 @@ sh("avconv -i " + mov).err.result(function(it){
       status: ''
     });
   }
+  // }}}
+
+  // perform the flow {{{
   mkdir(dir);
   dir += opt.dbscan.threshold * 100 + "/";
   mkdir(dir);
   mkdir(dir + opt.labName);
   opt.maskStage = 1;
   lastPost = null;
+
   async.eachSeries(flow, function(step, cb){
     step.pre == null && (step.pre = lastPost);
     lastPost = step.post;
@@ -743,8 +752,9 @@ sh("avconv -i " + mov).err.result(function(it){
     log('Finished'.bgMagenta + ' ' + dir.underline.yellow);
     return process.exit(0);
   });
+  // }}}
 
-/***** utility *****/
+  // utilities {{{
 
   function envelope(it){
     var dist, c, e, i$, to$, i, ref$, ref1$, iB, iT, b, t;
@@ -816,6 +826,7 @@ sh("avconv -i " + mov).err.result(function(it){
       }
     }
   }
+
   function framePath(name, i){
     var _dir;
     _dir = dir;
@@ -827,8 +838,6 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return _dir + "/" + name + "-frame/";
   }
-
-/***** lab *****/
 
   function heartRegionTest(){
     var name, ref$, heart, total, avg, tmp, met, halfRatio, manualRatio, i$, len$, t, img, ctx, data, j$, to$, i, newManual, newHalf, heartIndexInManual, halfIndexInManual, hit;
@@ -914,6 +923,7 @@ sh("avconv -i " + mov).err.result(function(it){
     app.lab.result.regionTest.manualSize = tmp['manual-heart-size'];
     return app.lab.result.regionTest.diffMeanSize = tmp['diffMean-heart-size'];
   }
+
   function frequencyCalculation(){
 
     // state
@@ -982,6 +992,7 @@ sh("avconv -i " + mov).err.result(function(it){
       }
     }
   }
+
   function getFreq(peak, reciprocalOfMeanPeriod){
     var fps, avg, i$, to$, i;
     fps = parseFloat(opt.fps);
@@ -996,6 +1007,7 @@ sh("avconv -i " + mov).err.result(function(it){
       return avg /= peak.length - 1;
     }
   }
+
   function detect(target, dist, average){
     var peaks, i$, to$, i, intervalMean;
     peaks = [];
@@ -1017,6 +1029,7 @@ sh("avconv -i " + mov).err.result(function(it){
     peaks.shift();
     return peaks;
   }
+
   function normalize(it){
     var average, i$, len$, x, results$ = [];
     average = 0;
@@ -1031,6 +1044,7 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return results$;
   }
+
   function tiltRate(data, peak, trough){
     var offset, avg, i$, to$, i, ref$, p, t1, t2, d1, d2, h1, h2;
     offset = -1;
@@ -1065,6 +1079,7 @@ sh("avconv -i " + mov).err.result(function(it){
     round(mathjs.median(avg), 3);
     return round(mathjs.mean(avg), 3);
   }
+
   function loadFrame(dir, size, cb){
     var name, that;
     name = (that = /\w*\/\w*\/(\w*)-frame\//.exec(dir)) ? that[1] : void 8;
@@ -1097,7 +1112,7 @@ sh("avconv -i " + mov).err.result(function(it){
     });
   }
 
-/***** process bar (pb) *****/
+  // process bar (pb) {{{
   function log(text, mode, progress){
     var time, timeInterval;
     time = new Date().toString().split(' ')[4];
@@ -1115,6 +1130,7 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     app.timeStamp = new Date();
   }
+
   function progress(it){
     var time, bar;
     time = new Date().toString().split(' ')[4].gray;
@@ -1132,6 +1148,7 @@ sh("avconv -i " + mov).err.result(function(it){
       }
     }
   }
+
   function render(len, fin){
     var _, i$, i;
     _ = [];
@@ -1145,7 +1162,7 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return _.join('');
   }
-  // pd end
+  // }}}
 
   function minmax(it){
     var m, M, i$, len$, v;
@@ -1160,6 +1177,7 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return [m, M];
   }
+
   function mkdir(it){
     if (!fs.existsSync(it)) {
       console.log(it);
@@ -1170,12 +1188,15 @@ sh("avconv -i " + mov).err.result(function(it){
       fs.mkdirSync(it);
     }
   }
+
   function saveJson(fn, obj){
     fs.writeFileSync(fn, JSON.stringify(obj, null, 2));
   }
+
   function readJson(fn){
     return JSON.parse(fs.readFileSync(fn));
   }
+
   function data2xy(data, size, threshold){
     var i$, to$, i, results$ = [];
     for (i$ = 0, to$ = data.data.length; i$ < to$; i$ += 4) {
@@ -1188,11 +1209,13 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return results$;
   }
+
   function getImgData(imgPath, size){
     var ctx;
     ctx = imageOf(imgPath, size);
     return ctx.getImageData(0, 0, size.width, size.height);
   }
+
   function isPeak(arr, i, dist){
     var result, i$, len$, d, ref$;
     result = true;
@@ -1206,6 +1229,7 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return result;
   }
+
   function isTrough(arr, i, dist){
     var result, i$, len$, d, ref$;
     result = true;
@@ -1219,12 +1243,14 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return result;
   }
+
   function saveImage(fn, data, size){
     var ctx;
     ctx = new canvas(size.width, size.height).getContext('2d');
     ctx.putImageData(data, 0, 0);
     fs.writeFileSync(fn, new Buffer(replace$.call(ctx.canvas.toDataURL(), /^data:image\/\w+;base64,/, ''), 'base64'));
   }
+
   function imageOf(fn, size){
     var img, ctx;
     img = new canvas.Image;
@@ -1233,11 +1259,13 @@ sh("avconv -i " + mov).err.result(function(it){
     ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, size.width, size.height);
     return ctx;
   }
+
   function distance(a, b){
     var ref$, x1, x2, y1, y2;
     ref$ = [parseFloat(a[0]), parseFloat(b[0]), parseFloat(a[1]), parseFloat(b[1])], x1 = ref$[0], x2 = ref$[1], y1 = ref$[2], y2 = ref$[3];
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
   }
+
   function movAv(it){
     var ma, i$, to$, i, results$ = [];
     ma = movingAverage(it.length);
@@ -1248,6 +1276,7 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return results$;
   }
+
   function hht(profile, mask){
     var e, i$, to$, i;
     e = envelope({
@@ -1265,6 +1294,7 @@ sh("avconv -i " + mov).err.result(function(it){
     saveJson(dir + "" + opt.labName + mask + "-mean", e.m);
     return e.m.unshift(null);
   }
+
   function skippable(it){
     if (opt.force[it.act]) {
       return 0;
@@ -1280,9 +1310,11 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return 1;
   }
+
   function round(value, length){
     return Math.round(value * Math.pow(10, length)) / Math.pow(10, length);
   }
+
   function getInitIndex(it){
     var left, right, x, res$, i$, len$, i, ref$, m, M, v;
     left = right = 0;
@@ -1310,6 +1342,7 @@ sh("avconv -i " + mov).err.result(function(it){
     }
     return [left, right];
   }
+
   function saveVideo(name, dst, cb){
     var opt_;
     opt_ = opt.quiet ? '-v quiet' : '';
@@ -1318,5 +1351,5 @@ sh("avconv -i " + mov).err.result(function(it){
       return cb();
     });
   }
-  return saveVideo;
+  // }}}
 });
