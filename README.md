@@ -11,9 +11,9 @@ command: `node zebrafish.js [VIDEO] [THEDA] [GRAYSCALE]`
 
 \[VIDEO\]: the video (`.mov` format) to calculate
 
-\[THEDA\]: the threshold to binarize a grayscale image (0.96 is suggested)
+\[THEDA\]: the threshold to binarize a grayscale image (`0.96` is suggested)
 
-\[GRAYSCALE\]: the grayscale formula (0 is suggested):
+\[GRAYSCALE\]: the grayscale formula (`0` is suggested):
 
 0. luma without gamma correction
 1. intensity
