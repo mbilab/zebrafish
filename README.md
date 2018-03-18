@@ -30,7 +30,7 @@ command: `node zebrafish.js [VIDEO] [BRIGHTNESS THRESHOLD] [GRAYSCALE ALGORITHM]
 0. linear luminance
 1. intensity
 2. gleam
-3. liuminance
+3. luminance
 4. luma
 5. value
 6. luster
