@@ -64,7 +64,7 @@ app = {
 mov = process.argv[2];
 
 // output directory
-dir = mov.replace(/^[^\/]+\//, 'output/experiment/').replace(/\.(mov|MOV)$/i, "-" + grayscaleMethods + "/");
+dir = mov.replace(/^[^\/]+\//, 'output/').replace(/\.(mov|MOV)$/i, "-" + grayscaleMethods + "/");
 sh("avconv -i " + mov).err.result(function(it){
   var opt, that, pbOpt, cache, act, flow, i$, len$, step, lastPost;
   log('---------------New Video---------------');
