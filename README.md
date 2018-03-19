@@ -13,3 +13,5 @@ command: `node zebrafish.js [VIDEO] [THEDA]`
 \[VIDEO\]: the video (`.mov` format) to calculate
 
 \[THEDA\]: the threshold to binarize a grayscale image (`0.96` is suggested)
+
+the result will be in output/[VIDEO]/[THEDA]/custom-init-kmeans-centroids/result.json
