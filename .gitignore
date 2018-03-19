@@ -1,0 +1,4 @@
+output
+*.mov
+*.MOV
+node_modules/

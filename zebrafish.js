@@ -16,50 +16,9 @@ movingAverage = require('moving-average');
 densityClustering = require('density-clustering');
 nodeKmeans = require('node-kmeans');
 simpleKmeans = require('simple-kmeans');
-grayscaleLib = require('./grayscale');
 // }}}
 
-// select a grayscale formula {{{
-grayscaleMethods = process.argv[4];
-grayscale = null;
-switch (parseInt(grayscaleMethods)) {
-case 0:
-  grayscale = grayscaleLib.linearLuminance;
-  break;
-case 1:
-  grayscale = grayscaleLib.intensity;
-  break;
-case 2:
-  grayscale = grayscaleLib.gleam;
-  break;
-case 3:
-  grayscale = grayscaleLib.luminance;
-  break;
-case 4:
-  grayscale = grayscaleLib.luma;
-  break;
-case 5:
-  grayscale = grayscaleLib.value;
-  break;
-case 6:
-  grayscale = grayscaleLib.luster;
-  break;
-case 7:
-  grayscale = grayscaleLib.lightness;
-  break;
-case 8:
-  grayscale = grayscaleLib.luminaceGC;
-  break;
-case 9:
-  grayscale = grayscaleLib.lightnessGC;
-  break;
-case 10:
-  grayscale = grayscaleLib.valueGC;
-  break;
-case 11:
-  grayscale = grayscaleLib.lusterGC;
-}
-// }}}
+grayscale = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
 app = { // variables are stored here {{{
   events: [],
@@ -70,8 +29,7 @@ app = { // variables are stored here {{{
 mov = process.argv[2];
 
 // output directory
-dir = mov.replace(/^[^\/]+\//, 'output/').replace(/\.(mov|MOV)$/i, "-" + grayscaleMethods + "/");
-
+dir = ("output/" + mov).replace(/\.(mov|MOV)$/i, "/");
 sh("avconv -i " + mov).err.result(function(it){
   var opt, that, pbOpt, cache, act, flow, i$, len$, step, lastPost;
   log('---------------New Video---------------');
