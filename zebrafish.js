@@ -80,7 +80,7 @@ sh("avconv -i " + mov).err.result(function(it){
     skip: {},
     list: ['raw', 'diffMean', 'fullHeart', 'halfHeart'],
     fps: (that = /, (\S+) fps,/.exec(it)) ? parseInt(that[1]) : void 8,
-    size: (that = /, (\d+)x(\d+),/.exec(it)) ? {
+    size: (that = /, (\d+)x(\d+)/.exec(it)) ? {
       height: parseInt(that[2]),
       width: parseInt(that[1])
     } : void 8,
