@@ -549,7 +549,19 @@ sh("avconv -i " + mov).err.result(function(it){
     app.lab = app.lab();
     frequencyCalculation();
     heartRegionTest();
-    saveJson(dir + opt.labName + 'result.json', app.lab);
+
+    result = {
+      fps: app.lab.state.fps,
+      frames: app.lab.state.frames,
+      heart_rate: app.lab.result.frequency.reciprocalOfMeanPeriod.hht.halfHeart,
+      heartbeats: app.lab.result.frequency.totalPeak.hht.halfHeart.method,
+      height: app.lab.state.size.height,
+      theda: app.lab.state.dbscan.threshold,
+      video: app.lab.name,
+      weight: app.lab.state.size.weight,
+    }
+
+    saveJson(dir + opt.labName + 'result.json', result);
     return step.cb();
   }; // }}}
 
