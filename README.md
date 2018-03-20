@@ -6,12 +6,14 @@
 4. `npm i`
 5. `mkdir output`
 
-# Execute
+# Usage
 
-command: `node zebrafish.js [VIDEO] [THEDA]`
+```
+Usage: node zebrafish.js [video] [theda]
 
-\[VIDEO\]: the video (`.mov` format) to calculate
+Arguments:
+  video  the video (.mov format) to analyze
+  theda  the threshold to binarize a grayscale image (`0.96` is suggested)
 
-\[THEDA\]: the threshold to binarize a grayscale image (`0.96` is suggested)
-
-the result will be in output/[VIDEO]/[THEDA]/custom-init-kmeans-centroids/result.json
+The result is stored in `output/[VIDEO]/[THEDA]/custom-init-kmeans-centroids/result.json`
+```
