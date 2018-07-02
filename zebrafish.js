@@ -1,4 +1,4 @@
-var gauss, async, extend, colors, canvas, fs, mkdirp, path, rimraf, sh, mathjs, movingAverage, densityClustering, nodeKmeans, simpleKmeans, grayscaleLib, grayscaleMethods, grayscale, app, mov, dir, replace$ = ''.replace;
+var gauss, async, extend, colors, canvas, fs, mkdirp, path, rimraf, sh, mathjs, movingAverage, densityClustering, nodeKmeans, grayscaleLib, grayscaleMethods, grayscale, app, mov, dir, replace$ = ''.replace;
 
 // include packages {{{
 gauss = require('gauss');
@@ -15,7 +15,6 @@ mathjs = require('mathjs');
 movingAverage = require('moving-average');
 densityClustering = require('density-clustering');
 nodeKmeans = require('node-kmeans');
-simpleKmeans = require('simple-kmeans');
 // }}}
 
 grayscale = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
