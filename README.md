@@ -16,7 +16,7 @@ For building a local image:
 `docker build -t zebrafish:standalone .`
 
 For using a existing image:
-`To be continued`
+`docker pull st9007a/zebrafish:standalone`
 
 # Usage
 
