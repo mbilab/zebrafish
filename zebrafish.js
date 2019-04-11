@@ -28,7 +28,7 @@ app = { // variables are stored here {{{
 mov = process.argv[2];
 
 // output directory
-dir = ("output/" + mov).replace(/\.(mov|MOV)$/i, "/");
+dir = ("output/" + mov.replace(/^input\//, '')).replace(/\.(mov|MOV)$/i, "/");
 sh("avconv -i " + mov).err.result(function(it){
   var opt, that, pbOpt, cache, act, flow, i$, len$, step, lastPost;
   log('---------------New Video---------------');
@@ -66,7 +66,6 @@ sh("avconv -i " + mov).err.result(function(it){
       }
     };
   }; // }}}
-
   opt = { // constatns are stored here {{{
     labName: 'custom-init-kmeans-centroids/',
     force: {
