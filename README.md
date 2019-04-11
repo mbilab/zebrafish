@@ -1,16 +1,20 @@
-# Setup
+# Zebrafish
+
+The implementation of the paper : An Automatic Method to Calculate Heart Rate from Zebrafish Larval Cardiac Videos
+
+## Setup
 
 1. `mkdir input output`
 2. Install dependencies or use our docker image:
 
-## Install dependencies
+### Install dependencies
 
 1. install [libav](https://www.libav.org/)
 2. install [cairo](https://www.cairographics.org/)
 3. install [node.js](https://nodejs.org/)
 4. `npm i`
 
-## Use docker image
+### Use docker image
 
 For building a local image:
 `docker build -t zebrafish:standalone .`
@@ -18,7 +22,7 @@ For building a local image:
 For using a existing image:
 `docker pull st9007a/zebrafish:standalone`
 
-# Usage
+## Usage
 
 For running in local:
 
