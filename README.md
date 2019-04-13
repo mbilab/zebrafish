@@ -33,7 +33,7 @@ For running in local:
 Usage: node zebrafish.js [video] [theda]
 
 Arguments:
-  video  the video (.mov format) to analyze
+  video  the relative path of the video (.mov format) to analyze
   theda  the threshold to binarize a grayscale image (`0.96` is suggested)
 
 The result is stored in `output/[VIDEO]/[THEDA]/custom-init-kmeans-centroids/result.json`
@@ -57,7 +57,7 @@ Arguments:
 Usage: node zebrafish.js [video] [theda]
 
 Arguments:
-  video  the video (.mov format) to analyze
+  video  the relative path of the video (.mov format) to analyze
   theda  the threshold to binarize a grayscale image (`0.96` is suggested)
 
 The result is stored in `output/[VIDEO]/[THEDA]/custom-init-kmeans-centroids/result.json`
