@@ -22,6 +22,9 @@ For building a local image:
 For using a existing image:
 `docker pull st9007a/zebrafish:standalone`
 
+Run docker:
+`docker run -it st9007a/zebrafish:standalone /bin/bash`
+
 ## Usage
 
 For running in local:
@@ -57,7 +60,7 @@ Arguments:
 Usage: node zebrafish.js [video] [theda]
 
 Arguments:
-  video  the relative path of the video (.mov format) to analyze
+  video  the relative path of the video (.mov format) to analyze (ex: input/xxx.mov)
   theda  the threshold to binarize a grayscale image (`0.96` is suggested)
 
 The result is stored in `output/[VIDEO]/[THEDA]/custom-init-kmeans-centroids/result.json`
