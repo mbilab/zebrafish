@@ -1,5 +1,7 @@
 var gauss, async, extend, colors, canvas, fs, mkdirp, path, rimraf, sh, mathjs, movingAverage, densityClustering, nodeKmeans, grayscaleLib, grayscaleMethods, grayscale, app, mov, dir, replace$ = ''.replace;
 
+
+
 // include packages {{{
 gauss = require('gauss');
 async = require('async');
@@ -192,7 +194,7 @@ sh("avconv -i " + mov).err.result(function(it){
 
   act.statImage = function(step){ // {{{ draw statistics image
     var ctx, data, i$, ref$, len$, i, stat, ref1$, m, M, d, j$, to$, j;
-    ctx = new canvas(opt.size.width, opt.size.height).getContext('2d');
+    ctx = new canvas.createCanvas(opt.size.width, opt.size.height).getContext('2d');
     data = ctx.createImageData(opt.size.width, opt.size.height);
     for (i$ = 0, len$ = (ref$ = opt.stat).length; i$ < len$; ++i$) {
       i = ref$[i$];
@@ -213,8 +215,8 @@ sh("avconv -i " + mov).err.result(function(it){
     var dbscan, ref$, width, height, outputData, diffMean, ctx, inputData, data, cum, res$, i$, i, to$, brightness, e, len$, m, threshold, sum, b, points, clusters, len, x, min, max, maxCluster, index;
     dbscan = new densityClustering.DBSCAN();
     ref$ = [opt.resize.width, opt.resize.height], width = ref$[0], height = ref$[1];
-    outputData = new canvas(width, height).getContext('2d').createImageData(width, height);
-    diffMean = new canvas(width, height).getContext('2d').createImageData(width, height);
+    outputData = new canvas.createCanvas(width, height).getContext('2d').createImageData(width, height);
+    diffMean = new canvas.createCanvas(width, height).getContext('2d').createImageData(width, height);
     ctx = imageOf(dir + "/diff-mean.png", opt.resize);
     inputData = ctx.getImageData(0, 0, width, height);
     data = inputData.data;
@@ -312,8 +314,8 @@ sh("avconv -i " + mov).err.result(function(it){
       for (i$ = 0, to$ = it.length; i$ < to$; ++i$) {
         i = i$;
         progress('tick');
-        outputData = new canvas(width, height).getContext('2d').createImageData(width, height);
-        grayscaleData = new canvas(width, height).getContext('2d').createImageData(width, height);
+        outputData = new canvas.createCanvas(width, height).getContext('2d').createImageData(width, height);
+        grayscaleData = new canvas.createCanvas(width, height).getContext('2d').createImageData(width, height);
         data = it[i].getImageData(0, 0, it[i].canvas.width, it[i].canvas.height).data;
         brightness = 0;
         for (j$ = 0, to1$ = data.length; j$ < to1$; j$ += 4) {
@@ -456,7 +458,7 @@ sh("avconv -i " + mov).err.result(function(it){
       segment = res$;
       saveJson(dir + opt.labName + app.filenames.halfHeartPosition, segment);
       ref$ = [opt.size.width, opt.size.height], width = ref$[0], height = ref$[1];
-      outputData = new canvas(width, height).getContext('2d').createImageData(width, height);
+      outputData = new canvas.createCanvas(width, height).getContext('2d').createImageData(width, height);
       for (i$ = 0, len$ = segment.length; i$ < len$; ++i$) {
         heartIndex = segment[i$];
         index = parseInt(heartIndex[1] * width + parseInt(heartIndex[0])) * 4;
@@ -812,10 +814,10 @@ sh("avconv -i " + mov).err.result(function(it){
     name = app.lab.name;
     ref$ = [0, 0, 0], heart = ref$[0], total = ref$[1], avg = ref$[2];
     tmp = {
-      diffMean: new canvas.Image,
-      manual: new canvas.Image,
-      full: new canvas.Image,
-      half: new canvas.Image
+      diffMean: new canvas.Image(),
+      manual: new canvas.Image(),
+      full: new canvas.Image(),
+      half: new canvas.Image()
     };
     ref$ = [0, 0], heart = ref$[0], met = ref$[1];
     if (!fs.existsSync("manual_heart/" + name + ".png")) {
@@ -831,7 +833,7 @@ sh("avconv -i " + mov).err.result(function(it){
       t = ref$[i$];
       heart = 0;
       img = tmp[t];
-      ctx = new canvas(img.width, img.height).getContext('2d');
+      ctx = new canvas.createCanvas(img.width, img.height).getContext('2d');
       ctx.drawImage(img, 0, 0);
       data = tmp[t + "-data"] = ctx.getImageData(0, 0, img.width, img.height).data;
       for (j$ = 3, to$ = data.length; j$ < to$; j$ += 4) {
@@ -852,10 +854,10 @@ sh("avconv -i " + mov).err.result(function(it){
 
     // convert test
     // resize manual size to full size
-    newManual = new canvas(tmp.full.width, tmp.full.height).getContext('2d');
+    newManual = new canvas.createCanvas(tmp.full.width, tmp.full.height).getContext('2d');
     newManual.drawImage(tmp.manual, 0, 0, tmp.manual.width, tmp.manual.height, 0, 0, tmp.full.width, tmp.full.height);
     tmp['manual-data'] = newManual.getImageData(0, 0, tmp.full.width, tmp.full.height).data;
-    newHalf = new canvas(tmp.half.width, tmp.half.height).getContext('2d');
+    newHalf = new canvas.createCanvas(tmp.half.width, tmp.half.height).getContext('2d');
     newHalf.drawImage(tmp.half, 0, 0, tmp.half.width, tmp.half.height, 0, 0, tmp.full.width, tmp.full.height);
     tmp['half-data'] = newHalf.getImageData(0, 0, tmp.full.width, tmp.full.height).data;
     ref$ = [[], [], 0], heartIndexInManual = ref$[0], halfIndexInManual = ref$[1], hit = ref$[2];
@@ -1214,16 +1216,16 @@ sh("avconv -i " + mov).err.result(function(it){
 
   function saveImage(fn, data, size){
     var ctx;
-    ctx = new canvas(size.width, size.height).getContext('2d');
+    ctx = new canvas.createCanvas(size.width, size.height).getContext('2d');
     ctx.putImageData(data, 0, 0);
     fs.writeFileSync(fn, new Buffer(replace$.call(ctx.canvas.toDataURL(), /^data:image\/\w+;base64,/, ''), 'base64'));
   }
 
   function imageOf(fn, size){
     var img, ctx;
-    img = new canvas.Image;
+    img = new canvas.Image();
     img.src = fs.readFileSync(fn);
-    ctx = new canvas(size.width, size.height).getContext('2d');
+    ctx = new canvas.createCanvas(size.width, size.height).getContext('2d');
     ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, size.width, size.height);
     return ctx;
   }
