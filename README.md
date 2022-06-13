@@ -37,7 +37,7 @@ Usage: node zebrafish.js [video] [theda]
 
 Arguments:
   video  the relative path of the video (.mov format) to analyze
-  theda  the threshold to binarize a grayscale image (`0.96` is suggested)
+  theda  the threshold to binarize a grayscale image (0.96 is suggested)
 
 The result is stored in `output/[VIDEO]/[THEDA]/custom-init-kmeans-centroids/result.json`
 ```
